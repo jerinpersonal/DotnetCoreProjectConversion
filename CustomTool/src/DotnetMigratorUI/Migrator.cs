@@ -88,6 +88,19 @@ namespace DotnetMigratorUI
                             referenceItemGroup.Add(referenceElement);
                         }
                     }
+
+                    if(packageName == "EntityFramework")
+                    {
+                        var referenceElement = new XElement("PackageReference");
+                        referenceElement.Add(new XAttribute("Include", "Microsoft.EntityFrameworkCore.Relational"),
+                            new XAttribute("Version", "5.0.2"));
+                        referenceItemGroup.Add(referenceElement);
+
+                        var referenceElementTools = new XElement("PackageReference");
+                        referenceElementTools.Add(new XAttribute("Include", "Microsoft.EntityFrameworkCore.tools"),
+                            new XAttribute("Version", "5.0.2"));
+                        referenceItemGroup.Add(referenceElementTools);
+                    }
                 }
 
             }

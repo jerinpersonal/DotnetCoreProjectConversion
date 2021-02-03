@@ -26,6 +26,10 @@
       {
         "netFrameWork": "Request.Url.Scheme",
         "dotnetCore": "Request.Scheme"
+      },
+      {
+        "netFrameWork": "using System.Data.Entity;",
+        "dotnetCore": "using Microsoft.EntityFrameworkCore;"
       }
     ]
   },
