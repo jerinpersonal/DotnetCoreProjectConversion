@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace DotnetFrameworkToCoreProjectFileMigration
+namespace DotnetMigratorUI
 {
     public static class MigrateCode
     {
@@ -118,7 +118,7 @@ namespace DotnetFrameworkToCoreProjectFileMigration
                 if (content.Contains(scriptTag))
                 {
                     var count = 0;
-                    var scriptTagSplits = content.Split(scriptTag);
+                    var scriptTagSplits = content.Split(new string[] { scriptTag },StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (var scriptTagSplit in scriptTagSplits)
                     {
