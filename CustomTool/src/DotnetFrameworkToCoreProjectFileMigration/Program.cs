@@ -1,4 +1,5 @@
-﻿using NuGet;
+﻿using Newtonsoft.Json;
+using NuGet;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +11,7 @@ namespace DotnetFrameworkToCoreProjectFileMigration
 {
     class Program
     {
-        private static string InputFilePath = @"Framework472.csproj";
+        private static string InputFilePath = @"D:\rajesh.pillai03\Data\RACKATHON_2020\Workspace\ToolTesting\legacy_master\migrators-legacy-01\src\eShopLegacyMVC\eShopLegacyMVC.csproj";
         private static string coreTemplateFilePath = @"DotnetCore31Template.csproj";
         private static XNamespace msbuild = "http://schemas.microsoft.com/developer/msbuild/2003";
         private static string packageConfigPath = @"packages.config";
@@ -23,9 +24,10 @@ namespace DotnetFrameworkToCoreProjectFileMigration
             InputFilePath = args?.Count() >= 1 ? args[0] : InputFilePath;
             //InputFilePath = @"C:\Workspace\XPO\mt-integrations-test\src\backend\Api\MT.Integrations.Backend.Api.Site.Tests\MT.Integrations.Backend.Api.Site.Tests.csproj";
             Console.WriteLine($"Input project file path is : { InputFilePath}");
-            packageConfigPath = args?.Count() >= 2 ? args[1] : GetExcecutionPath(packageConfigPath);
-            //packageConfigPath = @"C:\Workspace\XPO\mt-integrations\src\backend\Api\MT.Integrations.Backend.Api.Site\packages.config";
-            Console.WriteLine($"Input package file path is : { packageConfigPath}");
+            executionDirectory = Path.GetDirectoryName(InputFilePath);
+            //packageConfigPath = args?.Count() >= 2 ? args[1] : GetExcecutionPath(packageConfigPath);
+            ////packageConfigPath = @"C:\Workspace\XPO\mt-integrations\src\backend\Api\MT.Integrations.Backend.Api.Site\packages.config";
+            //Console.WriteLine($"Input package file path is : { packageConfigPath}");
             CreateCoreTemplateDocument();
             ProcessInputProject();
             Console.WriteLine("Project file migration tool completed.");
@@ -37,46 +39,109 @@ namespace DotnetFrameworkToCoreProjectFileMigration
 
             var project = projDefinition?.Element(msbuild + "Project");
             var itemGroups = project?.Elements(msbuild + "ItemGroup");
+            
             var document = CreateCoreTemplateDocument();
             var projectElement = document?.Element("Project");
 
             var references = itemGroups?.Elements(msbuild + "Reference");
-            CreateReferences(references, projectElement);
+            CreateReferences(references, projectElement, executionDirectory);
 
-            var projectReferences = itemGroups?.Elements(msbuild + "ProjectReference");
-            CreateProjectReferences(projectReferences, projectElement);
+            MigrateBundleConfig();
 
-            CreatePackageRefernces(projectElement);
+            MigrateCode.ReplaceCode(executionDirectory);
 
-            var renamedPath = Path.Combine(Path.GetDirectoryName(InputFilePath), $"Old_{Path.GetFileName(InputFilePath)}");
+            MigrateCode.CreateAdditionalFiles(executionDirectory);
+
+            MigrateCode.RemoveUnwantedFiles(executionDirectory);
+
+            //var projectReferences = itemGroups?.Elements(msbuild + "ProjectReference");
+            //CreateProjectReferences(projectReferences, projectElement);
+
+            //CreatePackageRefernces(projectElement);
+
+
+            var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(InputFilePath)}");
             Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
-            File.Move(InputFilePath, renamedPath);
+            File.Move(InputFilePath, renamedPath, true);
 
-            //var outputProjectFileMane = GetExcecutionPath($"New_{Path.GetFileName(InputFilePath)}");
 
             document.Save(InputFilePath);
+
+
+            //var renamedPath = Path.Combine(executionDirectory,
+            //    $"New_{Path.GetFileName(InputFilePath)}");
+            //document.Save(renamedPath);
         }
 
-        private static void CreateReferences(IEnumerable<XElement> references, XElement project)
+        private static void MigrateBundleConfig()
         {
+            var projectDirectory = Path.GetDirectoryName(InputFilePath);
+            var bundleConfigFilePath = Path.Combine(projectDirectory, "App_Start", "BundleConfig.cs");
+            if (File.Exists(bundleConfigFilePath))
+            {
+                var bundleConfigText = File.ReadAllText(bundleConfigFilePath);
+                var bundleConfig = BundleConfigManager.ProcessBundleConfig(bundleConfigText);
+                if(bundleConfig?.Count>0)
+                {
+                    File.WriteAllText(Path.Combine(executionDirectory, "bundleconfig.json")
+                        ,JsonConvert.SerializeObject(bundleConfig));
+                }
+            }
+        }
+
+        private static void CreateReferences(IEnumerable<XElement> references, XElement project, string projectDirectory)
+        {
+            var referenceItemGroup = new XElement("ItemGroup");
             if (references != null)
             {
-                var referenceItemGroup = new XElement("ItemGroup");
                 foreach (var reference in references)
                 {
-                    var hintPath = reference.Element(msbuild + "HintPath");
-                    if (hintPath == null)
+                    var packageName = GetPackageNameFromIncludeAttribute(
+                        reference.Attributes("Include").FirstOrDefault()?.Value);
+                    if (!string.IsNullOrEmpty(packageName))
                     {
-                        if (string.IsNullOrEmpty(reference.Value))
+                        var package = NugetNameMapping.GetCorePackage(packageName);
+                        if (package != null)
                         {
-                            var referenceElement = new XElement("Reference");
-                            referenceElement.Add(reference.Attribute("Include"));
+                            var referenceElement = new XElement("PackageReference");
+                            referenceElement.Add(new XAttribute("Include", package.dotnetCore),
+                                new XAttribute("Version", package.defaultCoreVersion));
                             referenceItemGroup.Add(referenceElement);
                         }
                     }
                 }
-                project.Add(referenceItemGroup);
+                
             }
+
+            var bundleConfigFilePath = Path.Combine(projectDirectory, "App_Start", "BundleConfig.cs");
+            if (File.Exists(bundleConfigFilePath))
+            {
+                var referenceElement = new XElement("PackageReference");
+                referenceElement.Add(new XAttribute("Include", "BuildBundlerMinifier"),
+                    new XAttribute("Version", "3.2.449"));
+                referenceItemGroup.Add(referenceElement);
+            }
+
+            if(Directory.GetFiles(projectDirectory,"*.cshtml", SearchOption.AllDirectories)?.Count()>0)
+            {
+                var referenceElement = new XElement("PackageReference");
+                referenceElement.Add(new XAttribute("Include", "Microsoft.AspNetCore.Html.Abstractions"),
+                    new XAttribute("Version", "2.2.0"));
+                referenceItemGroup.Add(referenceElement);
+            }
+
+            project.Add(referenceItemGroup);
+        }
+
+        private static string GetPackageNameFromIncludeAttribute(string includeAttributeValue)
+        {
+            string packageName = null;
+            var splits = includeAttributeValue.Split(',');
+            if(splits?.Length>1)
+            {
+                packageName = splits[0];
+            }
+            return packageName;
         }
 
         private static void CreateProjectReferences(IEnumerable<XElement> references, XElement project)
