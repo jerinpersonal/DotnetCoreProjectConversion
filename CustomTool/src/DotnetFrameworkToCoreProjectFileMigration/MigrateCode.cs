@@ -90,6 +90,61 @@ namespace DotnetFrameworkToCoreProjectFileMigration
                 File.Delete(Path.Combine(projectDirectory, "Global.asax.cs"));
             }
         }
+
+        public static void ReplaceStyleTaginUI(string projectDirectory)
+        {
+            var scriptTag = "@Styles.Render(\"";
+            var tagtype = "css";
+            var scriptTagTemplate = "<link rel=\"stylesheet\" href=\"~/{0}\" />";
+            ReplaceHtlTags(projectDirectory, scriptTag, tagtype, scriptTagTemplate);
+        }
+
+        public static void ReplaceScriptTaginUI(string projectDirectory)
+        {
+            var scriptTag = "@Scripts.Render(\"";
+            var tagtype = "js";
+            var scriptTagTemplate = "<script src=\"~/{0}\"></script>";
+            ReplaceHtlTags(projectDirectory, scriptTag, tagtype, scriptTagTemplate);
+        }
+
+        private static void ReplaceHtlTags(string projectDirectory, string scriptTag, string tagtype, string scriptTagTemplate)
+        {
+            var files = Directory.GetFiles(projectDirectory, "*.cshtml"
+                                    , SearchOption.AllDirectories);
+            foreach (var file in files)
+            {
+                var content = File.ReadAllText(file);
+                var isModified = false;
+                if (content.Contains(scriptTag))
+                {
+                    var count = 0;
+                    var scriptTagSplits = content.Split(scriptTag);
+
+                    foreach (var scriptTagSplit in scriptTagSplits)
+                    {
+                        if (count != 0)
+                        {
+                            var scriptPath = scriptTagSplit.Substring(0, scriptTagSplit.IndexOf('"'));
+
+                            var replaceText = $"{scriptTag}{scriptPath}\")";
+                            //var replacedText = $"<script src=\"~/{tagtype}{scriptPath.Replace("~", string.Empty)}.{tagtype}\"></script>";
+                            var replacedText = string.Format(scriptTagTemplate, $"{tagtype}{scriptPath.Replace("~", string.Empty)}.{tagtype}");
+                            if (content.Contains(replaceText))
+                            {
+                                content = content.Replace(replaceText, replacedText);
+                                isModified = true;
+                            }
+                        }
+
+                        count = count + 1;
+                    }
+                }
+                if (isModified)
+                {
+                    File.WriteAllText(file, content);
+                }
+            }
+        }
     }
 
     public class ReplaceText

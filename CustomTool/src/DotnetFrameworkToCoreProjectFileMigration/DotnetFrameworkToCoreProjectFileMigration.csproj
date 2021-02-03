@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <Compile Remove="FileOperationHelper.cs" />
-    <Compile Remove="Migrator.cs" />
     <Compile Remove="Program_Template.cs" />
     <Compile Remove="Startup_Template.cs" />
   </ItemGroup>

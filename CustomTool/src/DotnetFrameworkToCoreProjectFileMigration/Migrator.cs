@@ -1,138 +1,133 @@
+﻿using Newtonsoft.Json;
+using NuGet;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Xml.Linq;
 
-namespace com.infosys.migration
+namespace DotnetFrameworkToCoreProjectFileMigration
 {
+    public static class Migrator
+    {
+        private static XNamespace msbuild = "http://schemas.microsoft.com/developer/msbuild/2003";
+        public static void Execute(string projectFilePath, string templatePath)
+        {
+            ProcessInputProject(projectFilePath, templatePath);
+        }
+
+        private static void ProcessInputProject(string projectFilePath, string templatePath)
+        {
+            var executionDirectory = Path.GetDirectoryName(projectFilePath);
+            var projDefinition = XDocument.Load(projectFilePath);
+
+            var project = projDefinition?.Element(msbuild + "Project");
+            var itemGroups = project?.Elements(msbuild + "ItemGroup");
+
+            var document = CreateCoreTemplateDocument(templatePath);
+            var projectElement = document?.Element("Project");
+
+            var references = itemGroups?.Elements(msbuild + "Reference");
+            CreateReferences(references, projectElement, executionDirectory);
 
 
-	public class Migrator
-	{
+            MigrateBundleConfig(executionDirectory);
 
-		internal FileOperationHelper helper = new FileOperationHelper();
-		public virtual void migrateFiles(File directory)
-		{
-			Console.WriteLine(" Starting the processing....");
+            MigrateCode.ReplaceCode(executionDirectory);
 
-			File[] files = directory.listFiles();
-			foreach (File file in files)
-			{
+            MigrateCode.CreateAdditionalFiles(executionDirectory);
 
-				if (!file.Directory)
-				{
-				   handleMvc(file);
-				   handleBind(file);
-				   handleSelectList(file);
-				   handleHttpStatusCode(file);
-				   handleRequestUrlScheme(file);
-				   handleRenderPartialRequest(file);
-				   deleteAssemblyInfo(file);
-				   deleteBundleConfig(file);
-				   deleteFilterConfig(file);
-				   deleteRouteConfig(file);
-
-				}
-				else
-				{
-					migrateFiles(file);
-				}
-			}
-		}
+            MigrateCode.RemoveUnwantedFiles(executionDirectory);
 
 
-		private void handleMvc(File file)
-		{
+            MigrateCode.ReplaceScriptTaginUI(executionDirectory);
 
-			helper.replaceInFile(file, "System.Web.Mvc","Microsoft.AspNetCore.Mvc",false);
-		}
+            MigrateCode.ReplaceStyleTaginUI(executionDirectory);
 
-		private void handleBind(File file)
-		{
 
-			helper.replaceInFile(file, "Bind(Include =","Bind(",false);
+            var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
+            Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
+            File.Move(projectFilePath, renamedPath, true);
 
-		}
-		private void handleSelectList(File file)
-		{
 
-			 if (helper.searchInFile(file,"SelectList"))
-			 {
-				 helper.writeToFile(file,"using Microsoft.AspNetCore.Mvc.Rendering;");
-			 }
+            document.Save(projectFilePath);
+        }
 
-		}
+        private static void MigrateBundleConfig(string projectDirectory)
+        {
+            //var projectDirectory = Path.GetDirectoryName(InputFilePath);
+            var bundleConfigFilePath = Path.Combine(projectDirectory, "App_Start", "BundleConfig.cs");
+            if (File.Exists(bundleConfigFilePath))
+            {
+                var bundleConfigText = File.ReadAllText(bundleConfigFilePath);
+                var bundleConfig = BundleConfigManager.ProcessBundleConfig(bundleConfigText);
+                if (bundleConfig?.Count > 0)
+                {
+                    File.WriteAllText(Path.Combine(projectDirectory, "bundleconfig.json")
+                        , JsonConvert.SerializeObject(bundleConfig));
+                }
+            }
+        }
 
-		private void handleHttpStatusCode(File file)
-		{
-			helper.replaceInFile(file,"HttpStatusCodeResult(HttpStatusCode.BadRequest)","BadRequest()",false);
-			helper.replaceInFile(file,"HttpNotFound","NotFound",false);
-		}
+        private static void CreateReferences(IEnumerable<XElement> references, XElement project, string projectDirectory)
+        {
+            var referenceItemGroup = new XElement("ItemGroup");
+            if (references != null)
+            {
+                foreach (var reference in references)
+                {
+                    var packageName = GetPackageNameFromIncludeAttribute(
+                        reference.Attributes("Include").FirstOrDefault()?.Value);
+                    if (!string.IsNullOrEmpty(packageName))
+                    {
+                        var package = NugetNameMapping.GetCorePackage(packageName);
+                        if (package != null)
+                        {
+                            var referenceElement = new XElement("PackageReference");
+                            referenceElement.Add(new XAttribute("Include", package.dotnetCore),
+                                new XAttribute("Version", package.defaultCoreVersion));
+                            referenceItemGroup.Add(referenceElement);
+                        }
+                    }
+                }
 
-		private void handleRequestUrlScheme(File file)
-		{
-			helper.replaceInFile(file,"Request.Url.Scheme","Request.Scheme",false);
+            }
 
-		}
+            var bundleConfigFilePath = Path.Combine(projectDirectory, "App_Start", "BundleConfig.cs");
+            if (File.Exists(bundleConfigFilePath))
+            {
+                var referenceElement = new XElement("PackageReference");
+                referenceElement.Add(new XAttribute("Include", "BuildBundlerMinifier"),
+                    new XAttribute("Version", "3.2.449"));
+                referenceItemGroup.Add(referenceElement);
+            }
 
-		private void handleRenderPartialRequest(File file)
-		{
-			helper.replaceInFile(file,"@Html.Partial","@Html.RenderPartialAsync",false);
-		}
+            if (Directory.GetFiles(projectDirectory, "*.cshtml", SearchOption.AllDirectories)?.Count() > 0)
+            {
+                var referenceElement = new XElement("PackageReference");
+                referenceElement.Add(new XAttribute("Include", "Microsoft.AspNetCore.Html.Abstractions"),
+                    new XAttribute("Version", "2.2.0"));
+                referenceItemGroup.Add(referenceElement);
+            }
 
-		private void deleteAssemblyInfo(File file)
-		{
-			if (file.Name.equalsIgnoreCase("AssemblyInfo.cs"))
-			{
-				file.delete();
-			}
+            project.Add(referenceItemGroup);
+        }
 
-		}
-		private void deleteBundleConfig(File file)
-		{
-			if (file.Name.equalsIgnoreCase("BundleConfig.cs"))
-			{
-				file.delete();
-			}
+        private static string GetPackageNameFromIncludeAttribute(string includeAttributeValue)
+        {
+            string packageName = null;
+            var splits = includeAttributeValue.Split(',');
+            if (splits?.Length > 1)
+            {
+                packageName = splits[0];
+            }
+            return packageName;
+        }
 
-		}
-		private void deleteFilterConfig(File file)
-		{
-			if (file.Name.equalsIgnoreCase("FilterConfig.cs"))
-			{
-				file.delete();
-			}
-
-		}
-		private void deleteRouteConfig(File file)
-		{
-			if (file.Name.equalsIgnoreCase("RouteConfig.cs"))
-			{
-				file.delete();
-			}
-
-		}
-
-		public virtual void copyStartupFilesForCore(string baseDirectoryPath)
-		{
-			try
-			{
-				File programFile = new File("./ref/Program.cs");
-				File startUpFile = new File("./ref/Startup.cs");
-				Files.copy(programFile.toPath(), (new File(baseDirectoryPath + programFile.Name)).toPath(), StandardCopyOption.REPLACE_EXISTING);
-				Files.copy(startUpFile.toPath(), (new File(baseDirectoryPath + startUpFile.Name)).toPath(), StandardCopyOption.REPLACE_EXISTING);
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e.ToString());
-				Console.Write(e.StackTrace);
-			}
-
-		}
-
-		public static void Main(string[] args)
-		{
-			Migrator proj = new Migrator();
-			proj.migrateFiles(new File("D:\\workspace\\rackathon\\code"));
-			proj.copyStartupFilesForCore("D:\\workspace\\rackathon\\code\\ASPDotNetMVCLegacy-master\\src\\eShopLegacyMVC\\");
-		}
-
-	}
+        private static XDocument CreateCoreTemplateDocument(string templatePath)
+        {
+            return XDocument.Load(templatePath);
+        }
+    }
 }
