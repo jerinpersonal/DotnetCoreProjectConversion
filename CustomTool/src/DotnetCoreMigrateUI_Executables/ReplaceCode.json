@@ -1,0 +1,45 @@
+[
+  {
+    "FileExtensionsToReplace": "*.cs",
+    "replaceTexts": [
+      {
+        "netFrameWork": "[Bind(Include = ",
+        "dotnetCore": "[Bind("
+      },
+      {
+        "netFrameWork": "using System.Web.Mvc;",
+        "dotnetCore": "using Microsoft.AspNetCore.Mvc;"
+      },
+      {
+        "netFrameWork": "SelectList",
+        "dotnetCore": "using Microsoft.AspNetCore.Mvc.Rendering;",
+        "action": "AddNameSpace"
+      },
+      {
+        "netFrameWork": "new HttpStatusCodeResult(HttpStatusCode.BadRequest)",
+        "dotnetCore": "BadRequest()"
+      },
+      {
+        "netFrameWork": "HttpNotFound()",
+        "dotnetCore": "NotFound()"
+      },
+      {
+        "netFrameWork": "Request.Url.Scheme",
+        "dotnetCore": "Request.Scheme"
+      },
+      {
+        "netFrameWork": "using System.Data.Entity;",
+        "dotnetCore": "using Microsoft.EntityFrameworkCore;"
+      }
+    ]
+  },
+  {
+    "FileExtensionsToReplace": "*.cshtml",
+    "replaceTexts": [
+      {
+        "netFrameWork": "@Html.Partial",
+        "dotnetCore": "@Html.RenderPartialAsync"
+      }
+    ]
+  }
+]

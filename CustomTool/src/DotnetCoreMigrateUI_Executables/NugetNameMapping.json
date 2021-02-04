@@ -1,0 +1,32 @@
+[
+  {
+    "netFrameWork": "Autofac",
+    "dotnetCore": "Autofac",
+    "defaultCoreVersion": "6.1.0"
+  },
+  {
+    "netFrameWork": "Autofac.Integration.Mvc",
+    "dotnetCore": "Autofac.Extensions.DependencyInjection",
+    "defaultCoreVersion": "7.1.0"
+  },
+  {
+    "netFrameWork": "log4net",
+    "dotnetCore": "log4net",
+    "defaultCoreVersion": "2.0.12"
+  },
+  {
+    "netFrameWork": "Microsoft.AspNet.SessionState.SessionStateModule",
+    "dotnetCore": "Microsoft.AspNetCore.Session",
+    "defaultCoreVersion": "2.2.0"
+  },
+  {
+    "netFrameWork": "EntityFramework",
+    "dotnetCore": "Microsoft.EntityFrameworkCore",
+    "defaultCoreVersion": "5.0.2"
+  },
+  {
+    "netFrameWork": "EntityFramework.SqlServer",
+    "dotnetCore": "Microsoft.EntityFrameworkCore.SqlServer",
+    "defaultCoreVersion": "5.0.2"
+  }
+]
