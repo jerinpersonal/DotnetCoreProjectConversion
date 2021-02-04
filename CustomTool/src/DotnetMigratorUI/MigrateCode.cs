@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -20,7 +21,7 @@ namespace DotnetMigratorUI
 
             }
         }
-        public static void ReplaceCode(string projectDirectory)
+        public static void ReplaceWithDotnetCoreSupportedCodeSnipets(string projectDirectory)
         {
             if (_replaceCodes != null)
             {
@@ -66,7 +67,7 @@ namespace DotnetMigratorUI
             File.Copy("Startup_Template.cs", Path.Combine(projectDirectory, "Startup.cs"), true);
         }
 
-        public static void RemoveUnwantedFiles(string projectDirectory)
+        public static void RemoveObsoleteDotnetCoreFiles(string projectDirectory)
         {
             if (Directory.Exists(Path.Combine(projectDirectory, "App_Start")))
             {
@@ -154,6 +155,27 @@ namespace DotnetMigratorUI
             }
         }
 
+        public static void MigrateWebconfigToAppsettings(string projectDirectory)
+        {
+            ExecuteCommand("dotnet tool install --global dotnet-config2json",5000);
+            ExecuteCommand($"dotnet config2json {Path.Combine(projectDirectory, "Web.config")}",5000);
+
+            if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
+            {
+                File.Move(Path.Combine(projectDirectory, "Web.json"), Path.Combine(projectDirectory, "appsettings.json"));
+            }
+
+            if (File.Exists(Path.Combine(projectDirectory, "Web.config")))
+            {
+                File.Delete(Path.Combine(projectDirectory, "Web.config"));
+            }
+
+            if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
+            {
+                File.Delete(Path.Combine(projectDirectory, "Web.json"));
+            }
+        }
+
         private static void ReplaceHtlTags(string projectDirectory, string scriptTag, string tagtype, string scriptTagTemplate)
         {
             var files = Directory.GetFiles(projectDirectory, "*.cshtml"
@@ -191,6 +213,22 @@ namespace DotnetMigratorUI
                     File.WriteAllText(file, content);
                 }
             }
+        }
+
+        private static int ExecuteCommand(string commnd, int timeout)
+        {
+            var pp = new ProcessStartInfo("cmd.exe", "/C" + commnd)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WorkingDirectory = "C:\\",
+            };
+            using (var process = Process.Start(pp))
+            {
+                process.WaitForExit(timeout);
+                process.Close();
+            };
+            return 0;
         }
     }
 

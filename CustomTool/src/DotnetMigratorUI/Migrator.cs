@@ -27,16 +27,16 @@ namespace DotnetMigratorUI
             var projectElement = document?.Element("Project");
 
             var references = itemGroups?.Elements(msbuild + "Reference");
-            CreateReferences(references, projectElement, executionDirectory);
-
             
+            MigrateNugetPackageReferences(references, projectElement, executionDirectory);
+                        
             MigrateBundleConfig(executionDirectory);
 
-            MigrateCode.ReplaceCode(executionDirectory);
+            MigrateCode.ReplaceWithDotnetCoreSupportedCodeSnipets(executionDirectory);
 
             MigrateCode.CreateAdditionalFiles(executionDirectory);
 
-            MigrateCode.RemoveUnwantedFiles(executionDirectory);
+            MigrateCode.RemoveObsoleteDotnetCoreFiles(executionDirectory);
 
             MigrateCode.ReplaceScriptTaginUI(executionDirectory);
 
@@ -44,12 +44,13 @@ namespace DotnetMigratorUI
 
             MigrateCode.ReplaceHttpContextSession(executionDirectory);
 
+            MigrateCode.MigrateWebconfigToAppsettings(executionDirectory);
+
             var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
             Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
             File.Move(projectFilePath, renamedPath);
 
             document.Save(projectFilePath);
-            
         }
 
         private static void MigrateBundleConfig(string projectDirectory)
@@ -68,7 +69,7 @@ namespace DotnetMigratorUI
             }
         }
 
-        private static void CreateReferences(IEnumerable<XElement> references, XElement project, string projectDirectory)
+        private static void MigrateNugetPackageReferences(IEnumerable<XElement> references, XElement project, string projectDirectory)
         {
             var referenceItemGroup = new XElement("ItemGroup");
             if (references != null)
