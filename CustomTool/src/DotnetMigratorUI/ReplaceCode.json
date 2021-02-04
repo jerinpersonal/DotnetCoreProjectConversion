@@ -30,6 +30,10 @@
       {
         "netFrameWork": "using System.Data.Entity;",
         "dotnetCore": "using Microsoft.EntityFrameworkCore;"
+      },
+      {
+        "netFrameWork": "using System.Data.Entity.ModelConfiguration;",
+        "dotnetCore": ""
       }
     ]
   },
@@ -39,6 +43,16 @@
       {
         "netFrameWork": "@Html.Partial",
         "dotnetCore": "@Html.RenderPartialAsync"
+      },
+      {
+        "netFrameWork": "new HtmlString",
+        "dotnetCore": "@using Microsoft.AspNetCore.Html",
+        "action": "AddNameSpace"
+      },
+      {
+        "netFrameWork": "HttpContext.Current.Session",
+        "dotnetCore": "@using Microsoft.AspNetCore.Http",
+        "action": "AddNameSpace"
       }
     ]
   }

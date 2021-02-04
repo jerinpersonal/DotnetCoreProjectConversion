@@ -29,7 +29,7 @@ namespace DotnetMigratorUI
             var references = itemGroups?.Elements(msbuild + "Reference");
             CreateReferences(references, projectElement, executionDirectory);
 
-
+            
             MigrateBundleConfig(executionDirectory);
 
             MigrateCode.ReplaceCode(executionDirectory);
@@ -38,18 +38,18 @@ namespace DotnetMigratorUI
 
             MigrateCode.RemoveUnwantedFiles(executionDirectory);
 
-
             MigrateCode.ReplaceScriptTaginUI(executionDirectory);
 
             MigrateCode.ReplaceStyleTaginUI(executionDirectory);
 
+            MigrateCode.ReplaceHttpContextSession(executionDirectory);
 
             var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
             Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
             File.Move(projectFilePath, renamedPath);
 
-
             document.Save(projectFilePath);
+            
         }
 
         private static void MigrateBundleConfig(string projectDirectory)

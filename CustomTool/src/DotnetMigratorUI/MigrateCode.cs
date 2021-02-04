@@ -107,6 +107,53 @@ namespace DotnetMigratorUI
             ReplaceHtlTags(projectDirectory, scriptTag, tagtype, scriptTagTemplate);
         }
 
+        public static void ReplaceHttpContextSession(string projectDirectory)
+        {
+            var files = Directory.GetFiles(projectDirectory, "*.cshtml"
+                                   , SearchOption.AllDirectories);
+            var splitTag = "HttpContext.Current.Session[";
+            var contextNamespace = "httpContextAccessor";
+            var namespaceToAdd = $"@inject IHttpContextAccessor {contextNamespace}";
+            var tagTobeReplaced = "HttpContext.Session.GetString({0})";
+
+            foreach (var file in files)
+            {
+                var content = File.ReadAllText(file);
+                var isModified = false;
+                if (content.Contains(splitTag))
+                {
+                    var count = 0;
+                    var scriptTagSplits = content.Split(new string[] { splitTag }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (scriptTagSplits?.Length > 1)
+                    {
+                        content = $"{namespaceToAdd}{Environment.NewLine}{content}";
+                        isModified = true;
+                    }
+
+                    foreach (var scriptTagSplit in scriptTagSplits)
+                    {
+                        if (count != 0)
+                        {
+                            var variableName = scriptTagSplit.Substring(0, scriptTagSplit.IndexOf(']'));
+                            var tagToReplace = $"{splitTag}{variableName}]";
+                            if(content.Contains(tagToReplace))
+                            {
+                                content = content.Replace(tagToReplace, $"@{contextNamespace}.{string.Format(tagTobeReplaced, variableName)}");
+                                isModified = true;
+                            }
+                        }
+                        count = count + 1;
+                    }
+
+                    if (isModified)
+                    {
+                        File.WriteAllText(file, content);
+                    }
+                }
+            }
+        }
+
         private static void ReplaceHtlTags(string projectDirectory, string scriptTag, string tagtype, string scriptTagTemplate)
         {
             var files = Directory.GetFiles(projectDirectory, "*.cshtml"
