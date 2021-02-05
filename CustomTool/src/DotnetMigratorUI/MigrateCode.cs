@@ -189,7 +189,7 @@ namespace DotnetMigratorUI
             if (File.Exists(Path.Combine(projectDirectory, "Web.config")))
             {
                 ExecuteCommand("dotnet tool install --global dotnet-config2json", 5000);
-                ExecuteCommand($"dotnet config2json {Path.Combine(projectDirectory, "Web.config")}", 5000);
+                ExecuteCommand($"dotnet config2json \"{Path.Combine(projectDirectory, "Web.config")}\"", 5000);
 
                 if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
                 {
@@ -197,6 +197,22 @@ namespace DotnetMigratorUI
                     File.Delete(Path.Combine(projectDirectory, "Web.json"));
                     File.Delete(Path.Combine(projectDirectory, "Web.config"));
                 }
+            }
+        }
+
+        /// <summary>
+        /// This method will move static images folder to wwwroot folder.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
+        public static void MoveImagesFolderToWwwRootFolder(string projectDirectory)
+        {
+            if(Directory.Exists(Path.Combine(projectDirectory, "Images")))
+            {
+                if(!Directory.Exists(Path.Combine(projectDirectory, "wwwroot")))
+                {
+                    Directory.CreateDirectory(Path.Combine(projectDirectory, "wwwroot"));
+                }
+                Directory.Move(Path.Combine(projectDirectory, "Images"), Path.Combine(projectDirectory, "wwwroot", "Images"));
             }
         }
 

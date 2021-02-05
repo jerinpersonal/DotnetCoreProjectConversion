@@ -60,9 +60,12 @@ namespace DotnetMigratorUI
             // This method will migrate HttpContext session supported by .NET framework to .NET Core.
             MigrateCode.ReplaceHttpContextSession(executionDirectory);
 
-            var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
-            Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
-            File.Move(projectFilePath, renamedPath);
+            // This method will move static images folder to wwwroot folder.
+            MigrateCode.MoveImagesFolderToWwwRootFolder(executionDirectory);
+
+            //var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
+            //Console.WriteLine($"Existing Project file renamed to : { renamedPath}");
+            //File.Move(projectFilePath, renamedPath);
 
             document.Save(projectFilePath);
         }
