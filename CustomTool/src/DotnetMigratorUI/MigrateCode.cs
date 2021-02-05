@@ -21,6 +21,11 @@ namespace DotnetMigratorUI
 
             }
         }
+
+        /// <summary>
+        /// This method will replace .NET Framework specific supported code snippet to .NET Core Supported.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file sirectory</param>
         public static void ReplaceWithDotnetCoreSupportedCodeSnipets(string projectDirectory)
         {
             if (_replaceCodes != null)
@@ -61,12 +66,20 @@ namespace DotnetMigratorUI
             }
         }
 
+        /// <summary>
+        /// This method will create the additional class file required for .NET Core such as Program.cs, Startup.cs etc
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void CreateAdditionalFiles(string projectDirectory)
         {
             File.Copy("Program_Template.cs", Path.Combine(projectDirectory, "Program.cs"), true);
             File.Copy("Startup_Template.cs", Path.Combine(projectDirectory, "Startup.cs"), true);
         }
 
+        /// <summary>
+        /// This method will remove .NET Core Obsolete files.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void RemoveObsoleteDotnetCoreFiles(string projectDirectory)
         {
             if (Directory.Exists(Path.Combine(projectDirectory, "App_Start")))
@@ -92,6 +105,10 @@ namespace DotnetMigratorUI
             }
         }
 
+        /// <summary>
+        /// This method will replace Style Tag in views (.cshtml) to .NET Core supported formats.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void ReplaceStyleTaginUI(string projectDirectory)
         {
             var scriptTag = "@Styles.Render(\"";
@@ -100,6 +117,10 @@ namespace DotnetMigratorUI
             ReplaceHtlTags(projectDirectory, scriptTag, tagtype, scriptTagTemplate);
         }
 
+        /// <summary>
+        /// This method will replace Script Tag in views (.cshtml) to .NET Core supported formats.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void ReplaceScriptTaginUI(string projectDirectory)
         {
             var scriptTag = "@Scripts.Render(\"";
@@ -108,6 +129,10 @@ namespace DotnetMigratorUI
             ReplaceHtlTags(projectDirectory, scriptTag, tagtype, scriptTagTemplate);
         }
 
+        /// <summary>
+        /// This method will migrate HttpContext session supported by .NET framework to .NET Core.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void ReplaceHttpContextSession(string projectDirectory)
         {
             var files = Directory.GetFiles(projectDirectory, "*.cshtml"
@@ -155,6 +180,10 @@ namespace DotnetMigratorUI
             }
         }
 
+        /// <summary>
+        /// This method will convert Web.config file to ApplicationSettings.json file using dotnet-config2json tool
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         public static void MigrateWebconfigToAppsettings(string projectDirectory)
         {
             if (File.Exists(Path.Combine(projectDirectory, "Web.config")))

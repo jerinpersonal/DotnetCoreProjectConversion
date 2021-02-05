@@ -18,6 +18,8 @@ namespace DotnetMigratorUI
         public static void WebConfigMigrationExecute(string projectFilePath)
         {
             var executionDirectory = Path.GetDirectoryName(projectFilePath);
+
+            // This method will convert Web.config file to ApplicationSettings.json file using dotnet-config2json tool
             MigrateCode.MigrateWebconfigToAppsettings(executionDirectory);
         }
 
@@ -34,20 +36,28 @@ namespace DotnetMigratorUI
 
             var references = itemGroups?.Elements(msbuild + "Reference");
             
+            // This method will Migrate .NET Framewwork Nuget Package Reference to .NET Core Supported Nuget Packages.
             MigrateNugetPackageReferences(references, projectElement, executionDirectory);
                         
+            // This method will generate BundleConfig.json (.NET Core Supported) from .NET Framework - BundleConfig.cs.
             MigrateBundleConfig(executionDirectory);
 
+            // This method will replace .NET Framework specific supported code snippet to .NET Core Supported.
             MigrateCode.ReplaceWithDotnetCoreSupportedCodeSnipets(executionDirectory);
 
+            // This method will create the additional class file required for .NET Core such as Program.cs, Startup.cs etc
             MigrateCode.CreateAdditionalFiles(executionDirectory);
 
+            // This method will remove .NET Core Obsolete files.
             MigrateCode.RemoveObsoleteDotnetCoreFiles(executionDirectory);
 
+            // This method will replace Script Tag in views (.cshtml) to .NET Core supported formats.
             MigrateCode.ReplaceScriptTaginUI(executionDirectory);
 
+            // This method will replace Style Tag in views (.cshtml) to .NET Core supported formats.
             MigrateCode.ReplaceStyleTaginUI(executionDirectory);
 
+            // This method will migrate HttpContext session supported by .NET framework to .NET Core.
             MigrateCode.ReplaceHttpContextSession(executionDirectory);
 
             var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
@@ -57,6 +67,10 @@ namespace DotnetMigratorUI
             document.Save(projectFilePath);
         }
 
+        /// <summary>
+        /// This method will generate BundleConfig.json (.NET Core Supported) from .NET Framework - BundleConfig.cs.
+        /// </summary>
+        /// <param name="projectDirectory">.csproj file directory</param>
         private static void MigrateBundleConfig(string projectDirectory)
         {
             //var projectDirectory = Path.GetDirectoryName(InputFilePath);
@@ -73,6 +87,12 @@ namespace DotnetMigratorUI
             }
         }
 
+        /// <summary>
+        /// This method will Migrate .NET Framewwork Nuget Package Reference to .NET Core Supported Nuget Packages.
+        /// </summary>
+        /// <param name="references">Reference XML Element Collection</param>
+        /// <param name="project">Project root XML Element</param>
+        /// <param name="projectDirectory">.csproj file directory</param>
         private static void MigrateNugetPackageReferences(IEnumerable<XElement> references, XElement project, string projectDirectory)
         {
             var referenceItemGroup = new XElement("ItemGroup");
