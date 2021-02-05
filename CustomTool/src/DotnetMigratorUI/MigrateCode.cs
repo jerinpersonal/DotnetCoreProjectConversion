@@ -157,22 +157,17 @@ namespace DotnetMigratorUI
 
         public static void MigrateWebconfigToAppsettings(string projectDirectory)
         {
-            ExecuteCommand("dotnet tool install --global dotnet-config2json",5000);
-            ExecuteCommand($"dotnet config2json {Path.Combine(projectDirectory, "Web.config")}",5000);
-
-            if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
-            {
-                File.Move(Path.Combine(projectDirectory, "Web.json"), Path.Combine(projectDirectory, "appsettings.json"));
-            }
-
             if (File.Exists(Path.Combine(projectDirectory, "Web.config")))
             {
-                File.Delete(Path.Combine(projectDirectory, "Web.config"));
-            }
+                ExecuteCommand("dotnet tool install --global dotnet-config2json", 5000);
+                ExecuteCommand($"dotnet config2json {Path.Combine(projectDirectory, "Web.config")}", 5000);
 
-            if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
-            {
-                File.Delete(Path.Combine(projectDirectory, "Web.json"));
+                if (File.Exists(Path.Combine(projectDirectory, "Web.json")))
+                {
+                    File.Move(Path.Combine(projectDirectory, "Web.json"), Path.Combine(projectDirectory, "appsettings.json"));
+                    File.Delete(Path.Combine(projectDirectory, "Web.json"));
+                    File.Delete(Path.Combine(projectDirectory, "Web.config"));
+                }
             }
         }
 
@@ -225,7 +220,7 @@ namespace DotnetMigratorUI
             };
             using (var process = Process.Start(pp))
             {
-                process.WaitForExit(timeout);
+                process.WaitForExit();
                 process.Close();
             };
             return 0;

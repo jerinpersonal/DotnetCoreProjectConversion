@@ -34,6 +34,7 @@ namespace DotnetMigratorUI
             this.label1 = new System.Windows.Forms.Label();
             this.btnBrowse = new System.Windows.Forms.Button();
             this.btnMigration = new System.Windows.Forms.Button();
+            this.btnWebConfigMigration = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // openFileDialog1
@@ -68,19 +69,30 @@ namespace DotnetMigratorUI
             // 
             // btnMigration
             // 
-            this.btnMigration.Location = new System.Drawing.Point(148, 95);
+            this.btnMigration.Location = new System.Drawing.Point(262, 99);
             this.btnMigration.Name = "btnMigration";
-            this.btnMigration.Size = new System.Drawing.Size(109, 23);
+            this.btnMigration.Size = new System.Drawing.Size(123, 23);
             this.btnMigration.TabIndex = 3;
             this.btnMigration.Text = "Execute Migration";
             this.btnMigration.UseVisualStyleBackColor = true;
             this.btnMigration.Click += new System.EventHandler(this.btnMigration_Click);
             // 
+            // btnWebConfigMigration
+            // 
+            this.btnWebConfigMigration.Location = new System.Drawing.Point(262, 139);
+            this.btnWebConfigMigration.Name = "btnWebConfigMigration";
+            this.btnWebConfigMigration.Size = new System.Drawing.Size(123, 23);
+            this.btnWebConfigMigration.TabIndex = 4;
+            this.btnWebConfigMigration.Text = "Web Config Migration";
+            this.btnWebConfigMigration.UseVisualStyleBackColor = true;
+            this.btnWebConfigMigration.Click += new System.EventHandler(this.btnWebConfigMigration_Click);
+            // 
             // frmDotnetMigrator
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(414, 147);
+            this.ClientSize = new System.Drawing.Size(414, 174);
+            this.Controls.Add(this.btnWebConfigMigration);
             this.Controls.Add(this.btnMigration);
             this.Controls.Add(this.btnBrowse);
             this.Controls.Add(this.label1);
@@ -99,6 +111,7 @@ namespace DotnetMigratorUI
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button btnBrowse;
         private System.Windows.Forms.Button btnMigration;
+        private System.Windows.Forms.Button btnWebConfigMigration;
     }
 }
 

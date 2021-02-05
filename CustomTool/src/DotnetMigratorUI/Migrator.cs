@@ -15,6 +15,12 @@ namespace DotnetMigratorUI
             ProcessInputProject(projectFilePath, templatePath);
         }
 
+        public static void WebConfigMigrationExecute(string projectFilePath)
+        {
+            var executionDirectory = Path.GetDirectoryName(projectFilePath);
+            MigrateCode.MigrateWebconfigToAppsettings(executionDirectory);
+        }
+
         private static void ProcessInputProject(string projectFilePath, string templatePath)
         {
             var executionDirectory = Path.GetDirectoryName(projectFilePath);
@@ -43,8 +49,6 @@ namespace DotnetMigratorUI
             MigrateCode.ReplaceStyleTaginUI(executionDirectory);
 
             MigrateCode.ReplaceHttpContextSession(executionDirectory);
-
-            MigrateCode.MigrateWebconfigToAppsettings(executionDirectory);
 
             var renamedPath = Path.Combine(executionDirectory, $"Old_{Path.GetFileName(projectFilePath)}");
             Console.WriteLine($"Existing Project file renamed to : { renamedPath}");

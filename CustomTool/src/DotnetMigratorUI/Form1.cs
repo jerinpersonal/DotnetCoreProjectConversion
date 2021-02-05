@@ -12,6 +12,7 @@ namespace DotnetMigratorUI
 {
     public partial class frmDotnetMigrator : Form
     {
+        private string _migrationCsProjectPath = string.Empty;
         public frmDotnetMigrator()
         {
             InitializeComponent();
@@ -39,6 +40,7 @@ namespace DotnetMigratorUI
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 txtProjectFilePath.Text = openFileDialog1.FileName;
+
             }
         }
 
@@ -46,12 +48,26 @@ namespace DotnetMigratorUI
         {
             try
             {
+                _migrationCsProjectPath = txtProjectFilePath.Text;
                 Migrator.Execute(txtProjectFilePath.Text, @"DotnetCore31Template.csproj");
                 MessageBox.Show("Migration Has Been Successfully Completed.");
             }
             catch(Exception ex)
             {
                 MessageBox.Show("Migration Has Been Failed");
+            }
+        }
+
+        private void btnWebConfigMigration_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Migrator.WebConfigMigrationExecute(txtProjectFilePath.Text);
+                MessageBox.Show("Web Cofig File Migration Has Been Successfully Completed.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Web Cofig File Migration Has Been Successfully Failed.");
             }
         }
     }
